@@ -1,76 +1,9 @@
 ﻿using System;
-using System.Collections;
-using System.Linq;
 using System.Linq.Expressions;
 
 namespace OData.Linq {
-    internal class QueryTranslatorProvider<T> : ExpressionVisitor, IQueryProvider {
-        private readonly IQueryable _source;
+    internal class NullPropagationYanker : ExpressionVisitor {
         private bool _yankingNull;
-
-        public QueryTranslatorProvider(IQueryable source) {
-            if (source == null) {
-                throw new ArgumentNullException("source");
-            }
-
-            _source = source;
-        }
-
-        public IQueryable<TElement> CreateQuery<TElement>(Expression expression) {
-            if (expression == null) {
-                throw new ArgumentNullException("expression");
-            }
-
-            return new QueryTranslator<TElement>(_source, expression) as IQueryable<TElement>;
-        }
-
-        public IQueryable CreateQuery(Expression expression) {
-            if (expression == null) {
-                throw new ArgumentNullException("expression");
-            }
-
-            Type elementType = expression.Type.GetGenericArguments().First();
-            IQueryable result = (IQueryable)Activator.CreateInstance(typeof(QueryTranslator<>).MakeGenericType(elementType),
-                    new object[] { _source, expression });
-            return result;
-        }
-
-        public TResult Execute<TResult>(Expression expression) {
-            if (expression == null) {
-                throw new ArgumentNullException("expression");
-            }
-            object result = (this as IQueryProvider).Execute(expression);
-            return (TResult)result;
-        }
-
-        public object Execute(Expression expression) {
-            if (expression == null) {
-                throw new ArgumentNullException("expression");
-            }
-
-            Expression translated = Visit(expression);
-            return _source.Provider.Execute(translated);
-        }
-
-        internal IEnumerable ExecuteEnumerable(Expression expression) {
-            if (expression == null) {
-                throw new ArgumentNullException("expression");
-            }
-
-            Expression translated = Visit(expression);
-            return _source.Provider.CreateQuery(translated);
-        }
-
-        protected override Expression VisitConstant(ConstantExpression c) {
-            // Fix up the Expression tree to work with the underlying LINQ provider again
-            if (c.Type.IsGenericType && 
-                c.Type.GetGenericTypeDefinition() == typeof(QueryTranslator<>)) {
-                return _source.Expression;
-            }
-            else {
-                return base.VisitConstant(c);
-            }
-        }
 
         protected override Expression VisitUnary(UnaryExpression node) {
             if (_yankingNull &&
