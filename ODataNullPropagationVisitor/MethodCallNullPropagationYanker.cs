@@ -9,8 +9,7 @@ namespace OData.Linq
     public class MethodCallNullPropagationYanker : ExpressionVisitor {
         private bool _yankingNull;
 
-        protected override Expression VisitUnary(UnaryExpression node)
-        {
+        protected override Expression VisitUnary(UnaryExpression node) {
             if (_yankingNull &&
                 node.NodeType == ExpressionType.Convert &&
                 Nullable.GetUnderlyingType(node.Type) == typeof(bool)) {
@@ -20,8 +19,7 @@ namespace OData.Linq
             return base.VisitUnary(node);
         }
 
-        protected override Expression VisitBinary(BinaryExpression node)
-        {
+        protected override Expression VisitBinary(BinaryExpression node) {
             if (_yankingNull) {
                 Expression left = Visit(node.Left);
                 Expression right = Visit(node.Right);
